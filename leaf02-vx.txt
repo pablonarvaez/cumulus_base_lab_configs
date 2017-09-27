@@ -1,0 +1,109 @@
+cumulus@leaf02:mgmt-vrf:~$ net show configuration 
+
+interface lo
+
+interface eth0
+  address 10.0.0.25/24
+  alias oob-mgmt
+  vrf mgmt
+
+interface swp1
+  alias link_to_server08-ens1
+  bridge-access 14
+
+interface swp2
+  address 172.16.1.10/30
+  alias link_to_spine01-swp2
+
+interface swp3
+  address 172.16.1.14/30
+  alias link_to_spine02-swp2
+
+interface swp4
+  address 10.0.3.2/32
+  alias lo-vxlan
+
+interface bridge
+  alias layer2_bridge
+  bridge-ports swp1 vni-1014
+  bridge-vids 14
+  bridge-vlan-aware yes
+
+interface mgmt
+  address 127.0.0.1/8
+  vrf-table auto
+
+interface vlan14
+  address 192.168.14.1/24
+  vlan-id 14
+  vlan-raw-device bridge
+
+interface vni-1014
+  bridge-access 14
+  bridge-learning off
+  mstpctl-bpduguard yes
+  mstpctl-portbpdufilter yes
+  mtu 9152
+  vxlan-id 1014
+  vxlan-local-tunnelip 10.0.3.2
+
+hostname leaf02
+
+frr version 3.1+cl3u1
+
+frr defaults datacenter
+
+username cumulus nopassword
+
+service integrated-vtysh-config
+
+log syslog informational
+
+router bgp 65032
+  bgp router-id 10.0.1.25
+  neighbor 172.16.1.9 remote-as 65030
+  neighbor 172.16.1.13 remote-as 65030
+  
+  address-family ipv4 unicast
+    network 10.0.1.25/32 
+    redistribute connected
+  
+  address-family l2vpn evpn
+    neighbor 172.16.1.9 activate
+    neighbor 172.16.1.13 activate
+    advertise-all-vni
+
+line vty
+
+dot1x
+  mab-activation-delay 30
+  eap-reauth-period 0
+  
+  radius
+    accounting-port 1813
+    authentication-port 1812
+
+time
+  
+  zone
+    Etc/UTC
+  
+  ntp
+    
+    servers
+      0.cumulusnetworks.pool.ntp.org iburst
+      1.cumulusnetworks.pool.ntp.org iburst
+      2.cumulusnetworks.pool.ntp.org iburst
+      3.cumulusnetworks.pool.ntp.org iburst
+    
+    source
+      eth0
+
+dns
+  
+  nameserver
+    10.20.249.1
+
+snmp-server
+  listening-address localhost
+cumulus@leaf02:mgmt-vrf:~$ 

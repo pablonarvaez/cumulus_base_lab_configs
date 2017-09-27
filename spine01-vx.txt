@@ -1,0 +1,84 @@
+cumulus@spine01:mgmt-vrf:~$ net show configuration 
+
+interface lo
+
+interface eth0
+  address 10.0.0.33/24
+  alias oob-mgmt
+  vrf mgmt
+
+interface swp1
+  address 172.16.1.1/30
+  alias link_to_leaf01-swp2
+  ipv6 nd ra-interval 10
+  no ipv6 nd suppress-ra
+
+interface swp2
+  address 172.16.1.9/30
+  alias link_to_leaf02-swp2
+  ipv6 nd ra-interval 10
+  no ipv6 nd suppress-ra
+
+interface mgmt
+  address 127.0.0.1/8
+  vrf-table auto
+
+hostname spine01
+
+frr version 3.1+cl3u1
+
+frr defaults datacenter
+
+username cumulus nopassword
+
+service integrated-vtysh-config
+
+log syslog informational
+
+router bgp 65030
+  bgp router-id 10.0.1.13
+  neighbor 172.16.1.2 remote-as 65031
+  neighbor 172.16.1.10 remote-as 65032
+  
+  address-family ipv4 unicast
+    network 10.0.1.13/32 
+    redistribute connected
+  
+  address-family l2vpn evpn
+    neighbor 172.16.1.2 activate
+    neighbor 172.16.1.10 activate
+
+line vty
+
+dot1x
+  mab-activation-delay 30
+  eap-reauth-period 0
+  
+  radius
+    accounting-port 1813
+    authentication-port 1812
+
+time
+  
+  zone
+    Etc/UTC
+  
+  ntp
+    
+    servers
+      0.cumulusnetworks.pool.ntp.org iburst
+      1.cumulusnetworks.pool.ntp.org iburst
+      2.cumulusnetworks.pool.ntp.org iburst
+      3.cumulusnetworks.pool.ntp.org iburst
+    
+    source
+      eth0
+
+dns
+  
+  nameserver
+    10.20.249.1
+
+snmp-server
+  listening-address localhost
+cumulus@spine01:mgmt-vrf:~$ 
